@@ -1,0 +1,99 @@
+kind: ConfigMap
+metadata:
+  name: grafana-agent-logs
+apiVersion: v1
+data:
+  agent.yaml: |    
+    metrics:
+      wal_directory: /tmp/grafana-agent-wal
+      global:
+        scrape_interval: 60s
+        external_labels:
+          cluster: cloud
+      configs:
+      - name: integrations
+        remote_write:
+        - url: {{ metrics_url }}
+          basic_auth:
+            username: {{ metrics_username }}
+            password: {{ metrics_password }}
+    integrations:
+      prometheus_remote_write:
+      - url: {{ metrics_url }}
+        basic_auth:
+          username: {{ metrics_username }}
+          password: {{ metrics_password }}
+      node_exporter:
+        enabled: true
+        relabel_configs:
+        - replacement: hostname
+          source_labels:
+          - __address__
+          target_label: instance
+      
+    logs:
+      configs:
+      - name: integrations
+        clients:
+        - url: {{ logs_url }}
+          basic_auth:
+            username: {{ logs_username }}
+            password: {{ logs_password }}
+          external_labels:
+            cluster: homelab
+        positions:
+          filename: /tmp/positions.yaml
+        target_config:
+          sync_period: 10s
+        scrape_configs:
+        - job_name: integrations/node_exporter_journal_scrape
+          journal:
+            max_age: 24h
+            labels:
+              instance: hostname
+              job: integrations/node_exporter
+          relabel_configs:
+          - source_labels: ['__journal__systemd_unit']
+            target_label: 'unit'
+          - source_labels: ['__journal__boot_id']
+            target_label: 'boot_id'
+          - source_labels: ['__journal__transport']
+            target_label: 'transport'
+          - source_labels: ['__journal_priority_keyword']
+            target_label: 'level'
+        - job_name: integrations/kubernetes/pod-logs
+          kubernetes_sd_configs:
+            - role: pod
+          pipeline_stages:
+            - cri: {}
+          relabel_configs:
+            - source_labels:
+                - __meta_kubernetes_pod_node_name
+              target_label: __host__
+            - action: labelmap
+              regex: __meta_kubernetes_pod_label_(.+)
+            - action: replace
+              replacement: $1
+              separator: /
+              source_labels:
+                - __meta_kubernetes_namespace
+                - __meta_kubernetes_pod_name
+              target_label: job
+            - action: replace
+              source_labels:
+                - __meta_kubernetes_namespace
+              target_label: namespace
+            - action: replace
+              source_labels:
+                - __meta_kubernetes_pod_name
+              target_label: pod
+            - action: replace
+              source_labels:
+                - __meta_kubernetes_pod_container_name
+              target_label: container
+            - replacement: /var/log/pods/*$1/*.log
+              separator: /
+              source_labels:
+                - __meta_kubernetes_pod_uid
+                - __meta_kubernetes_pod_container_name
+              target_label: __path__

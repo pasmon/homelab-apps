@@ -1,0 +1,11 @@
+test-environment: false
+
+metrics:
+  url: "https://prometheus-prod-xxxx.grafana.net/api/prom/push"
+  username: "xxxx"
+  password: "xxxx"
+
+logs:
+  url: "https://logs-prod-xxxx.grafana.net/loki/api/v1/push"
+  username: "xxxx"
+  password: "xxxx"
