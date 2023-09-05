@@ -8,7 +8,7 @@ python_version = "3"
 
 [packages]
 constructs = "~=3.4.148"
-cdk8s = "~=1.42.0"
+cdk8s = "~=1.61.5"
 cdk8s-plus-22 = "~=1.0.0.b184"
 pyyaml = "*"
 "ruamel.yaml" = "*"
