@@ -3,7 +3,7 @@ metadata:
   name: grafana-agent-logs
 apiVersion: v1
 data:
-  agent.yaml: |    
+  agent.yaml: |
     metrics:
       wal_directory: /tmp/grafana-agent-wal
       global:
@@ -30,7 +30,7 @@ data:
           source_labels:
           - __address__
           target_label: instance
-      
+
     logs:
       configs:
       - name: integrations
